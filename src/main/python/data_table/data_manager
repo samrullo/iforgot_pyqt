@@ -1,0 +1,91 @@
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
+from PyQt5.QtWidgets import *
+import json
+import os
+import logging
+import pandas as pd
+from config import Config
+import shutil
+import re
+
+
+class GenericDataManager:
+    def __init__(self, main_window, data_filepath):
+        self.main_window = main_window
+        self.config = Config(self.main_window.app_context)
+        self.data_filepath = data_filepath
+
+    def get_data_file(self):
+        dlg = QFileDialog(self.main_window)
+        dlg.setFileMode(QFileDialog.AnyFile)
+        dlg.setFilter(QDir.Files)
+
+        if dlg.exec_():
+            filenames = dlg.selectedFiles()
+            if len(filenames) > 0:
+                return filenames[0]
+
+    def set_data_file(self):
+        try:
+            full_aladdin_passwords_file = self.get_data_file()
+        except Exception as e:
+            logging.info(f"excpetion raised : {e}")
+            return
+        if full_aladdin_passwords_file:
+            self.full_aladdin_passwords_file = full_aladdin_passwords_file
+            logging.info(f"set password file to {self.full_aladdin_passwords_file}")
+            self.config.update_config(
+                "full_aladdin_passwords_file", self.full_aladdin_passwords_file
+            )
+        else:
+            logging.info(f"No password file was chosen so will exit")
+            return
+
+    def get_data_as_list(self):
+        with open(self.data_filepath, "r") as fh:
+            data_list = json.load(fh)
+            logging.info(f"loaded data : {data_list}")
+            return data_list
+
+    @staticmethod
+    def update_data(new_data_list, data_file):
+        GenericDataManager.back_up_data_file(data_file)
+        with open(data_file, "w") as fh:
+            json.dump(new_data_list, fh)
+
+    @staticmethod
+    def back_up_data_file(data_filepath, bkup_no=5):
+        data_file_path_tokens = os.path.split(data_filepath)
+        if len(data_file_path_tokens) == 2:
+            data_filename = data_file_path_tokens[-1]
+            data_folder = data_file_path_tokens[0]
+            data_filename_main_part = data_filename.split("\.")[0]
+            bkup_data_files = [
+                file
+                for file in os.listdir(data_folder)
+                if re.match(f"^{data_filename_main_part}.*_bkup.*", file)
+                and not os.path.isdir(file)
+            ]
+            # if there are more than 5 back up password files remove the oldest and rename others
+            if len(bkup_data_files) >= bkup_no:
+                bkup_data_files = sorted(bkup_data_files)
+                os.remove(os.path.join(data_folder, bkup_data_files[0]))
+                bkup_data_files.remove(bkup_data_files[0])
+                for idx, bkup_file in enumerate(bkup_data_files):
+                    bkup_rename_filename = (
+                        data_filename_main_part + "_bkup" + str(idx) + ".json"
+                    )
+                    shutil.move(
+                        os.path.join(data_folder, bkup_file),
+                        os.path.join(data_folder, bkup_rename_filename),
+                    )
+            # backup the current password file
+            bkup_filename = (
+                data_filename_main_part + "_bkup" + str(len(bkup_data_files)) + ".json"
+            )
+            shutil.copy(
+                os.path.join(data_folder, data_filename),
+                os.path.join(data_folder, bkup_filename),
+            )
+            logging.info(f"backed up data file {data_filepath}")
