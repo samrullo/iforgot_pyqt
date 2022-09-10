@@ -1,0 +1,6 @@
+{
+  "data_table_name": "random_configs",
+  "data_table_full_name": "Random Configs",
+  "no_cols": "3",
+  "column_names": ["Client", "Config Name", "Config Value"]
+}

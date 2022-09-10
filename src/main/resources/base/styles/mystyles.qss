@@ -1,0 +1,56 @@
+QStackedWidget{
+     margin: 10px;
+ }
+
+ QToolButton{
+     background-color:lightblue;
+     color:white;
+     font: 30px 'Arial';
+     padding:6px;
+     border-radius: 5px;
+     width:300px;     
+ }
+
+QToolButton:pressed{
+    background-color:orange;
+}
+
+ QPushButton#special_button{
+            background-color:lightgreen;
+            color:white;
+            font:bold 30px 'Arial';
+            padding: 6px;
+            border-radius: 5px;
+        }
+
+QPushButton#special_button:pressed{
+    background-color:orange;
+}
+
+QLineEdit#big_le{
+    font:bold 30px 'Arial';
+}
+
+QLabel#big_lbl{
+    font:bold 30px 'Arial';
+}
+
+QAction{
+    font: 16px 'Arial';
+}
+
+QMenu{
+    font: 16px 'Arial';
+}
+
+QMenuBar{
+    font: 16px 'Arial';
+}
+
+QWidget{
+    font: 16px 'Arial'
+}
+
+QTableWidget{
+    font: 16px 'Arial';
+}

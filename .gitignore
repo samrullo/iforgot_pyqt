@@ -161,4 +161,3 @@ cython_debug/
 
 target/
 build/
-resources/
