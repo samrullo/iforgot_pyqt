@@ -161,3 +161,5 @@ cython_debug/
 
 target/
 build/
+src/main/resources/base/data_tables/data_table_contents/*
+src/main/resources/base/data_tables/data_table_definitions/*

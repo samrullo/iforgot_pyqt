@@ -2,6 +2,10 @@ QStackedWidget{
      margin: 10px;
  }
 
+QStackedWidget#compact_stacked_widget{
+    padding: 100px;
+}
+
  QToolButton{
      background-color:lightblue;
      color:white;
@@ -34,6 +38,7 @@ QLineEdit#big_le{
 QLabel#big_lbl{
     font:bold 30px 'Arial';
 }
+
 
 QAction{
     font: 16px 'Arial';

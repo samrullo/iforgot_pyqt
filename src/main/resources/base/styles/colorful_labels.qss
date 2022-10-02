@@ -1,0 +1,12 @@
+QLabel#big_lbl_orange{
+                                    font:bold 30px 'Arial';
+                                    color:orange;
+                                    }
+QLabel#big_lbl_orange{
+                                    font:bold 30px 'Arial';
+                                    color:blue;
+                                    }
+QLabel#big_lbl_orange{
+                                    font:bold 30px 'Arial';
+                                    color:black;
+                                    }

@@ -1,6 +1,0 @@
-{
-  "data_table_name": "gpc_tickets",
-  "data_table_full_name": "GPC Tickets",
-  "no_cols": "4",
-  "column_names": ["client", "project", "ticket", "url"]
-}

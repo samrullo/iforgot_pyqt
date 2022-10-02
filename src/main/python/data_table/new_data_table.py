@@ -15,7 +15,7 @@ from PyQt5.QtGui import QFont
 
 from utils.my_pyqt_utils import deleteItemsOfLayout
 from .config import CSSConfig
-
+import logging
 
 class NewDataTableWidget(QWidget):
     def __init__(self, main_window, appctxt) -> None:
@@ -106,10 +106,10 @@ class NewDataTableWidget(QWidget):
         data_table_def_file = data_table_def_folder / (
             data_table_def["data_table_name"] + ".json"
         )
-        print(f"attempting to save {data_table_def} into {data_table_def_file}")
+        logging.debug(f"attempting to save {data_table_def} into {data_table_def_file}")
         with open(data_table_def_file, "w") as f:
             json.dump(data_table_def, f)
-        print(f"saved data_table def into {data_table_def_file}")
+        logging.debug(f"saved data_table def into {data_table_def_file}")
 
         # next generate empty file in data_table_contents folder
         data_table_contents_folder = pathlib.Path(
@@ -123,9 +123,15 @@ class NewDataTableWidget(QWidget):
 
         # next add new data table to main window menu
         self.main_window.refresh_data_table_configs()
+        self.main_window.data_table_actions_list.populate_data_table_actions_list()
         self.main_window.populate_data_config_actions()
 
         QMessageBox.information(self, "Successfully saved", "Successfully saved")
         for col_le in self.column_names:
-            print(col_le.text())
+            logging.debug(col_le.text())
         deleteItemsOfLayout(self.col_form_layout)
+        self.data_table_name_le.clear()
+        self.no_of_cols_le.clear()
+        self.main_window.stacked_widget.setCurrentWidget(
+            self.main_window.data_table_actions_list.data_table_actions_window
+        )

@@ -80,7 +80,6 @@ def get_column_name_from_qtable_item(item, data_config_columns):
 def get_key_column_value_from_qtable_item(item, table_widget):
     return table_widget.item(item.row(), 0).text()
 
-
 def get_data_table_content_value_from_key(
     data_table_contents, key_column_name, key_column_val, column_name
 ):

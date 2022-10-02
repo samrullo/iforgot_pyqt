@@ -30,6 +30,7 @@ from utils.data_table_utils import (
     get_data_table_content_value_from_key,
 )
 
+import logging
 
 class ABCDataTable(metaclass=ABCMeta):
     @abstractmethod
@@ -86,6 +87,7 @@ class DataTableWindow(QWidget):
 
         title = QLabel(self.data_config["data_table_full_name"])
         title.setAlignment(Qt.AlignCenter)
+        title.setObjectName(CSSConfig.BIG_LABEL)
 
         # search section
         search_label = QLabel("Search text")
@@ -157,13 +159,22 @@ class NewDataTableContentWindow(QWidget):
         self.add_btn.setObjectName(CSSConfig.GREEN_BIG_BUTTON)
         self.cancel_btn = QPushButton("Cancel")
         self.cancel_btn.setObjectName(CSSConfig.GREEN_BIG_BUTTON)
-        v_box.addWidget(
-            QLabel(f"New content for {self.data_config['data_table_full_name']}")
-        )
+        title_label = QLabel(f"New content for {self.data_config['data_table_full_name']}")
+        title_label.setObjectName(CSSConfig.BIG_LABEL_ORANGE)
+        title_label.setAlignment(Qt.AlignCenter)
+        v_box.addWidget(title_label)
         v_box.addLayout(form_layout)
         v_box.addWidget(self.add_btn)
         v_box.addWidget(self.cancel_btn)
+        v_box.addWidget(QLabel())
+        v_box.addWidget(QLabel())
+        v_box.addWidget(QLabel())
         self.setLayout(v_box)
+        self.setObjectName(CSSConfig.COMPACT_STACKED_WIDGET)
+    
+    def clear_line_edit_text(self):
+        for line_edit in self.column_line_edits_dict.values():
+            line_edit.clear()
 
 
 class DataTable(ABCDataTable):
@@ -187,6 +198,9 @@ class DataTable(ABCDataTable):
             with open(self.data_table_path, "w") as f:
                 json.dump([{}], f)
         self.data_table_contents = self.read_data_table_contents()
+        
+        # how many copies of data_table_content to back up whenever we update it
+        self.bkup_no=5
 
         # initialize DataTableWindow widget with all its UI elements
         self.data_table_window.initializeUI()
@@ -210,6 +224,9 @@ class DataTable(ABCDataTable):
         # event handler to add new data table content
         self.new_data_table_content_window.add_btn.clicked.connect(self.add_data)
 
+        # event handler to return to data table contents when cancel is clicked in new_data_table_content_window
+        self.new_data_table_content_window.cancel_btn.clicked.connect(lambda x : self.stacked_widget_layout.setCurrentWidget(self.data_table_window))
+
         # will use this flag to identify if the cell can be passed for itemChanged
         # set event handler to flip the flag when QTableWidgetItem is double clicked
         self.item_double_clicked_flag = False
@@ -227,7 +244,7 @@ class DataTable(ABCDataTable):
         )
 
     def item_double_clicked(self, item):
-        print("will set double clicked flag to true")
+        logging.debug("will set double clicked flag to true")
         self.item_double_clicked_flag = True
 
     def read_data_table_contents(self):
@@ -246,8 +263,29 @@ class DataTable(ABCDataTable):
         self.data_table_window.data_table_widget.clear()
         self.data_table_window.populate_table_widget_data(filtered_data_list)
 
+    def get_key_column_name_and_val_from_item(self,item):
+        key_column_val = get_key_column_value_from_qtable_item(
+                item, self.data_table_window.data_table_widget
+            )
+            
+        key_column_name = get_column_name_from_qtable_item(
+            self.data_table_window.data_table_widget.item(item.row(), 0),
+            self.data_config["column_names"],
+        )
+        logging.debug(f"located key column name : {key_column_name}, and key column value : {key_column_val}")
+        return key_column_name,key_column_val
+
+    def backup_and_refresh_data_table_contents_file(self):
+        # take a back up up to bkup_no versions
+        back_up_data_file(self.data_table_path, bkup_no=self.bkup_no)
+        
+        # populate current data_table_content json file with new version of data_table_contents
+        with open(self.data_table_path, "w") as fh:
+            json.dump(self.data_table_contents, fh)
+
+
     def add_data(self):
-        print(
+        logging.debug(
             f"will add {[(col,val.text()) for col,val in self.new_data_table_content_window.column_line_edits_dict.items()]}"
         )
         answer = QMessageBox.question(
@@ -258,36 +296,34 @@ class DataTable(ABCDataTable):
             QMessageBox.Yes,
         )
         if answer == QMessageBox.Yes:
+            # first will remove empty dictionary in data_table_contents if there is one
+            self.data_table_contents=[dtbl_content for dtbl_content in self.data_table_contents if len(dtbl_content)>0]
+            
+            # next append new data
             self.data_table_contents.append(
                 {
                     col: val.text()
                     for col, val in self.new_data_table_content_window.column_line_edits_dict.items()
                 }
             )
-            back_up_data_file(self.data_table_path, bkup_no=5)
-            with open(self.data_table_path, "w") as fh:
-                json.dump(self.data_table_contents, fh)
+            self.backup_and_refresh_data_table_contents_file()
+            self.data_table_window.populate_table_widget_data(self.data_table_contents)
+            self.new_data_table_content_window.clear_line_edit_text()
             self.stacked_widget_layout.setCurrentWidget(self.data_table_window)
 
     def update(self, item: QTableWidgetItem):
         if self.item_double_clicked_flag:
-            print("Implement DataTable update method")
-            print(f"item row: {item.row()}, item column : {item.column()}")
-            print(f"item text : {item.text()}, item value : {item.data(0)}")
-            key_column_val = get_key_column_value_from_qtable_item(
-                item, self.data_table_window.data_table_widget
-            )
-            key_column_name = get_column_name_from_qtable_item(
-                self.data_table_window.data_table_widget.item(item.row(), 0),
-                self.data_config["column_names"],
-            )
+            logging.debug("Implement DataTable update method")
+            logging.debug(f"item row: {item.row()}, item column : {item.column()}")
+            logging.debug(f"item text : {item.text()}, item value : {item.data(0)}")
+            key_column_name,key_column_val=self.get_key_column_name_and_val_from_item(item)
             column_name = get_column_name_from_qtable_item(
                 item, self.data_config["column_names"]
             )
             current_item_val = get_data_table_content_value_from_key(
                 self.data_table_contents, key_column_name, key_column_val, column_name
             )
-            print(
+            logging.debug(
                 f"Change data table widget item from {current_item_val} to {item.data(0)}"
             )
             answer = QMessageBox.question(
@@ -302,13 +338,25 @@ class DataTable(ABCDataTable):
                     if data_table_content[key_column_name] == key_column_val:
                         data_table_content[column_name] = item.text()
                         break
-                back_up_data_file(self.data_table_path, bkup_no=5)
-                with open(self.data_table_path, "w") as fh:
-                    json.dump(self.data_table_contents, fh)
+                self.backup_and_refresh_data_table_contents_file()
             self.item_double_clicked_flag = False
         else:
-            print("item_double_clicked flag was False so will not do anything")
+            logging.debug("item_double_clicked flag was False so will not do anything")
 
     def delete(self):
         item=self.data_table_window.data_table_widget.currentItem()
-        print("Implement DataTable delete method", item)
+        logging.debug(f"Delete item : {item.text()}")
+        
+
+        key_column_name,key_column_val=self.get_key_column_name_and_val_from_item(item)
+        answer = QMessageBox.question(
+            self.data_table_window,
+            "Confirm",
+            f"Are you sure you want to delete item with key {key_column_name} : {key_column_val}?",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.Yes,
+        )
+        if answer == QMessageBox.Yes:
+            self.data_table_contents=[dtbl_content for dtbl_content in self.data_table_contents if len(dtbl_content)>0 and dtbl_content[key_column_name]!=key_column_val]
+            self.backup_and_refresh_data_table_contents_file()
+            self.data_table_window.populate_table_widget_data(self.data_table_contents)
