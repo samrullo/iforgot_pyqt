@@ -161,5 +161,5 @@ cython_debug/
 
 target/
 #build/
-src/main/resources/base/data_tables/data_table_contents/*
-src/main/resources/base/data_tables/data_table_definitions/*
+src/main/resources/base/data_tables/data_table_contents/back_up
+src/main/resources/base/data_tables/data_table_definitions/bkup/
